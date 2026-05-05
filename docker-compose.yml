@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  # 1. Banco de Dados
+  db:
+    image: mysql:5.7
+    container_name: mysql-db
+    environment:
+      MYSQL_ROOT_PASSWORD: r00t
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: usr-wordpress
+      MYSQL_PASSWORD: pwd-wordpress
+    # Não expomos portas aqui para garantir que o host não acesse diretamente
+
+  # 2. Instância WordPress 1
+  wordpress1:
+    image: wordpress:5.4.2-php7.2-apache
+    container_name: wordpress1
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: usr-wordpress
+      WORDPRESS_DB_PASSWORD: pwd-wordpress
+      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - ./html:/var/www/html # Compartilha a pasta com o host
+    depends_on:
+      - db
+
+  # 3. Instância WordPress 2
+  wordpress2:
+    image: wordpress:5.4.2-php7.2-apache
+    container_name: wordpress2
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: usr-wordpress
+      WORDPRESS_DB_PASSWORD: pwd-wordpress
+      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - ./html:/var/www/html # Compartilha a mesma pasta
+    depends_on:
+      - db
+
+  # 4. Instância WordPress 3
+  wordpress3:
+    image: wordpress:5.4.2-php7.2-apache
+    container_name: wordpress3
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: usr-wordpress
+      WORDPRESS_DB_PASSWORD: pwd-wordpress
+      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - ./html:/var/www/html # Compartilha a mesma pasta
+    depends_on:
+      - db
+
+  # 5. Balanceador de Carga Nginx
+  nginx:
+    image: nginx:1.19.0
+    container_name: nginx-balancer
+    ports:
+      - "80:80" # Único container com acesso liberado para o host
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro # Injeta a configuração lida no Passo 1
+      - ./html:/usr/share/nginx/html # Mapeia a pasta dos WP para o Nginx
+    depends_on:
+      - wordpress1
+      - wordpress2
+      - wordpress3
+  
+  # 6. Gerador de Carga Locust
+  locust:
+    image: grubykarol/locust
+    container_name: locust
+    ports:
+      - "8089:8089" # Porta para acessar a interface do Locust
+    environment:
+      - ATTACKED_HOST=http://nginx # Aponta para o balanceador de carga
+      - LOCUST_MODE=locustfile.py # Especifica o arquivo de teste a ser usado
+    volumes:
+      - ./locust-scripts:/locust # Mapeia a pasta com os scripts de teste do Locust
+    depends_on:
+      - nginx

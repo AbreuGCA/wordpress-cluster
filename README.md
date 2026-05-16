@@ -85,3 +85,8 @@ Os resultados devem ser apresentados em gráficos, analisando:
 - **Requisições por Segundo (RPS)** no eixo Y em função do número de usuários/instâncias.
 
 > **Nota:** Utilize a interface do Locust para exportar os dados em CSV e gerar as visualizações conforme os modelos sugeridos no roteiro.
+
+# Membros
+Gabriel Abreu
+Igor Gomes
+Kalil Smith
